@@ -13,7 +13,7 @@ M.config = {
     cluster_refresh_interval = 3600,
     custom_registries = {},
   },
-  fallback = { "datreeio", "yannh" },
+  fallback = { "local", "custom", "yannh" },
 }
 
 local builtin_groups = {
@@ -145,23 +145,29 @@ local function match_resource(resource)
     if url then
       table.insert(sources, { url = url, source = "yannh", name = string.format("%s@%s/%s [%s]", resource.kind, resource.group, resource.version or "core", M.config.version) })
     end
-  end
-
-  for _, fallback in ipairs(M.config.fallback) do
-    if fallback == "datreeio" then
-      local url = build_datreeio_url(resource)
-      if url then
-        table.insert(sources, { url = url, source = "datreeio", name = string.format("%s@%s/%s", resource.kind, resource.group, resource.version or "v1") })
-      end
-    elseif fallback == "local" then
-      local url = build_local_crd_url(resource)
-      if url then
-        table.insert(sources, { url = url, source = "local", name = string.format("%s@%s/%s (local)", resource.kind, resource.group, resource.version or "v1") })
-      end
-    elseif fallback == "custom" then
-      local url = build_custom_registry_url(resource)
-      if url then
-        table.insert(sources, { url = url, source = "custom", name = string.format("%s@%s/%s (custom)", resource.kind, resource.group, resource.version or "v1") })
+  else
+    -- For CRDs (non-builtin), try local cache, custom registries, then datreeio
+    for _, fallback in ipairs(M.config.fallback) do
+      if fallback == "local" then
+        local url = build_local_crd_url(resource)
+        if url then
+          table.insert(sources, { url = url, source = "local", name = string.format("%s@%s/%s (local)", resource.kind, resource.group, resource.version or "v1") })
+        end
+      elseif fallback == "custom" then
+        local url = build_custom_registry_url(resource)
+        if url then
+          table.insert(sources, { url = url, source = "custom", name = string.format("%s@%s/%s (custom)", resource.kind, resource.group, resource.version or "v1") })
+        end
+      elseif fallback == "datreeio" then
+        local url = build_datreeio_url(resource)
+        if url then
+          table.insert(sources, { url = url, source = "datreeio", name = string.format("%s@%s/%s", resource.kind, resource.group, resource.version or "v1") })
+        end
+      elseif fallback == "yannh" then
+        local url = build_yannh_url(resource)
+        if url then
+          table.insert(sources, { url = url, source = "yannh", name = string.format("%s@%s/%s [%s]", resource.kind, resource.group, resource.version or "core", M.config.version) })
+        end
       end
     end
   end
