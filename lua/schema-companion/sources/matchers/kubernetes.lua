@@ -17,6 +17,7 @@ M.config = {
 }
 
 local builtin_groups = {
+  [""] = true, -- core group
   ["k8s.io"] = true,
   ["apps"] = true,
   ["batch"] = true,
@@ -68,7 +69,20 @@ end
 ---@param resource { group: string, version: string, kind: string }
 ---@return string?
 local function build_yannh_url(resource)
-  local group = resource.group:match("^([^.]+)") or resource.group
+  local group = resource.group
+  if group == "" then
+    -- Core group: ServiceAccount, Pod, ConfigMap, etc.
+    if resource.version then
+      return string.format(
+        "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/%s-standalone-strict/%s-%s.json",
+        M.config.version,
+        resource.kind:lower(),
+        resource.version:lower()
+      )
+    end
+    return string.format("https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/%s-standalone-strict/%s.json", M.config.version, resource.kind:lower())
+  end
+  group = group:match("^([^.]+)") or group
   if resource.version then
     return string.format(
       "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/%s-standalone-strict/%s-%s-%s.json",
@@ -89,28 +103,35 @@ end
 ---@param resource { group: string, version: string, kind: string }
 ---@return string?
 local function build_datreeio_url(resource)
-  return string.format(
-    "https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/%s/%s_%s.json",
-    resource.group:lower(),
-    resource.kind:lower(),
-    (resource.version or "v1"):lower()
-  )
+  local group = resource.group
+  if group == "" then
+    group = "core"
+  end
+  return string.format("https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/%s/%s_%s.json", group:lower(), resource.kind:lower(), (resource.version or "v1"):lower())
 end
 
 ---@param resource { group: string, version: string, kind: string }
 ---@return string?
 local function build_local_crd_url(resource)
   local path = M.config.registry.local_path
-  local group_safe = resource.group:gsub("%.", "_")
+  local group = resource.group
+  if group == "" then
+    group = "core"
+  end
+  local group_safe = group:gsub("%.", "_")
   return string.format("file://%s/%s/%s/%s.json", path, group_safe, resource.version or "v1", resource.kind:lower())
 end
 
 ---@param resource { group: string, version: string, kind: string }
 ---@return string?
 local function build_custom_registry_url(resource)
+  local group = resource.group
+  if group == "" then
+    group = "core"
+  end
   for _, reg in ipairs(M.config.registry.custom_registries) do
     if reg.url then
-      local url = reg.url:gsub("{group}", resource.group):gsub("{kind}", resource.kind):gsub("{version}", resource.version or "v1")
+      local url = reg.url:gsub("{group}", group):gsub("{kind}", resource.kind):gsub("{version}", resource.version or "v1")
       return url
     end
   end

@@ -74,9 +74,10 @@ function M.parse_yaml_documents(bufnr)
   local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
   local docs = {}
   local current = { start = 1, lines = {} }
+  local line_num = 1
 
   for i, line in ipairs(lines) do
-    if line:match("^%s*---%s*$") and i > current.start then
+    if line:match("^%s*---%s*$") then
       if #current.lines > 0 then
         current.finish = i - 1
         table.insert(docs, current)
@@ -114,6 +115,7 @@ end
 ---@return string?, string?, string?, string?
 function M.extract_resource_info(lines)
   local apiVersion, kind
+  local group, version
   for _, line in ipairs(lines) do
     local _, _, g, v = line:find([[^apiVersion:%s*["']?([^%s"'/]*)/?([^%s"']*)]])
     if g and g ~= "" then
@@ -125,6 +127,12 @@ function M.extract_resource_info(lines)
     if k and k ~= "" then
       kind = k
     end
+  end
+  -- Normalize core group (v1, v2, etc. without a group name)
+  if group and not group:match("%.") and not group:match("/") then
+    -- This is a core API version like "v1", treat as core group
+    version = group
+    group = ""
   end
   return apiVersion, kind, group, version
 end

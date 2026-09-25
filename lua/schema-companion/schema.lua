@@ -2,12 +2,26 @@ local M = {}
 
 local log = require("schema-companion.log")
 
----@param bufnr number
----@param adapter schema_companion.Adapter
+---@param bufnr number?
+---@param adapter? schema_companion.Adapter
 ---@return schema_companion.Schema[] | nil
 function M.match(bufnr, adapter)
   bufnr = bufnr or vim.api.nvim_get_current_buf()
   local ctx = require("schema-companion.context").read_buffer_context(bufnr)
+
+  -- If no adapter provided, use the first one from context
+  if not adapter then
+    local client_id = next(ctx)
+    if client_id then
+      adapter = ctx[client_id].adapter
+    end
+  end
+
+  if not adapter then
+    log.debug("no adapter found for buffer: bufnr=%d", bufnr)
+    return nil
+  end
+
   local client_id = adapter:get_client().id
   local client_ctx = ctx[client_id]
 

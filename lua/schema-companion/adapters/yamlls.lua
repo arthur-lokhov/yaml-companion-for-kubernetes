@@ -18,12 +18,16 @@ function M:on_setup_client(config)
       require("schema-companion.context").setup(bufnr, self)
     end),
     on_init = utils.add_hook_after(config.on_init, function(client)
+      log.debug("yamlls: on_init, sending yaml/supportSchemaSelection")
       client:notify("yaml/supportSchemaSelection", { {} })
       return true
     end),
     handlers = vim.tbl_extend("force", config.handlers or {}, {
-      ["yaml/schema/store/initialized"] = function(_, _, req, _)
-        return require("schema-companion.lsp").on_store_initialized(req.client_id, self)
+      ["yaml/schema/store/initialized"] = function(err, result, req, _)
+        log.debug("yamlls: store initialized callback: client_id=%s", req and req.client_id or "nil")
+        if req and req.client_id then
+          return require("schema-companion.lsp").on_store_initialized(req.client_id, self)
+        end
       end,
     }),
   })

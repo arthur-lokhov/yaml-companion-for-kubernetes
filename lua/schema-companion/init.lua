@@ -22,7 +22,7 @@ end
 ---@param sources schema_companion.Source[]
 ---@param lsp_config? vim.lsp.ClientConfig
 function M.setup_lsp(adapter_name, sources, lsp_config)
-  local adapter = M.adapters[adapter_name].setup(sources)
+  local adapter = M.adapters[adapter_name].setup({ sources = sources })
   local client_config = adapter:on_setup_client(lsp_config or {})
   vim.lsp.config(adapter_name, client_config)
   vim.lsp.enable(adapter_name)
