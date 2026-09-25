@@ -193,15 +193,29 @@ function M:match(ctx, bufnr)
   local docs = utils.parse_yaml_documents(bufnr)
   local all_schemas = {}
 
+  -- Find the document where the cursor is
+  local cursor_line = vim.api.nvim_win_get_cursor(0)[1]
+  local current_doc = nil
   for _, doc in ipairs(docs) do
-    if doc.kind and doc.group then
-      local schemas = match_resource({ group = doc.group, version = doc.version, kind = doc.kind })
-      for _, s in ipairs(schemas) do
-        s.doc_start = doc.start_line
-        s.doc_end = doc.end_line
-      end
-      vim.list_extend(all_schemas, schemas)
+    if cursor_line >= doc.start_line and cursor_line <= doc.end_line then
+      current_doc = doc
+      break
     end
+  end
+
+  -- If no document found at cursor, use the first one
+  if not current_doc and #docs > 0 then
+    current_doc = docs[1]
+  end
+
+  -- Only match schemas for the current document
+  if current_doc and current_doc.kind and current_doc.group then
+    local schemas = match_resource({ group = current_doc.group, version = current_doc.version, kind = current_doc.kind })
+    for _, s in ipairs(schemas) do
+      s.doc_start = current_doc.start_line
+      s.doc_end = current_doc.end_line
+    end
+    vim.list_extend(all_schemas, schemas)
   end
 
   return all_schemas
