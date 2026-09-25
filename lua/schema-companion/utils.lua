@@ -116,21 +116,22 @@ end
 function M.extract_resource_info(lines)
   local apiVersion, kind
   local group, version
+  local had_slash = false
   for _, line in ipairs(lines) do
     local _, _, g, v = line:find([[^apiVersion:%s*["']?([^%s"'/]*)/?([^%s"']*)]])
     if g and g ~= "" then
       apiVersion = g .. (v ~= "" and ("/" .. v) or "")
       group = g
       version = v ~= "" and v or nil
+      had_slash = v ~= ""
     end
     local _, _, k = line:find([[^kind:%s*["']?([^%s"'/]*)]])
     if k and k ~= "" then
       kind = k
     end
   end
-  -- Normalize core group (v1, v2, etc. without a group name)
-  if group and not group:match("%.") and not group:match("/") then
-    -- This is a core API version like "v1", treat as core group
+  -- Normalize core group (v1, v2, etc. without a group name) - only if no slash was present
+  if group and not had_slash and not group:match("%.") then
     version = group
     group = ""
   end
