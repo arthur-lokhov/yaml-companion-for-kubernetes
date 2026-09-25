@@ -73,31 +73,20 @@ local function build_yannh_url(resource)
   if group == "" then
     -- Core group: ServiceAccount, Pod, ConfigMap, etc.
     if resource.version then
-      return string.format(
-        "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/%s-standalone-strict/%s-%s.json",
-        M.config.version,
-        resource.kind:lower(),
-        resource.version:lower()
-      )
+      return string.format("https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/master/%s-%s.json", resource.kind:lower(), resource.version:lower())
     end
-    return string.format("https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/%s-standalone-strict/%s.json", M.config.version, resource.kind:lower())
+    return string.format("https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/master/%s.json", resource.kind:lower())
   end
   group = group:match("^([^.]+)") or group
   if resource.version then
     return string.format(
-      "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/%s-standalone-strict/%s-%s-%s.json",
-      M.config.version,
+      "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/master/%s-%s-%s.json",
       resource.kind:lower(),
       group:lower(),
       resource.version:lower()
     )
   end
-  return string.format(
-    "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/%s-standalone-strict/%s-%s.json",
-    M.config.version,
-    resource.kind:lower(),
-    group:lower()
-  )
+  return string.format("https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/master/%s-%s.json", resource.kind:lower(), group:lower())
 end
 
 ---@param resource { group: string, version: string, kind: string }
